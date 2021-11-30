@@ -9,7 +9,7 @@ import com.github.push.model.Device;
 import com.github.push.model.Notification;
 import com.github.push.model.Topic;
 import com.google.cloud.firestore.Firestore;
-import com.google.cloud.firestore.FirestoreOptions;
+import com.google.firebase.cloud.FirestoreClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +26,7 @@ public class StoreManager {
     private TopicDao topicDao;
 
     public StoreManager() {
-        Firestore db = FirestoreOptions.getDefaultInstance().getService();
+        Firestore db = FirestoreClient.getFirestore();
         this.db = db;
         deviceDao = new DeviceDao(db);
         topicDao = new TopicDao(db);
@@ -57,32 +57,49 @@ public class StoreManager {
         );
     }
 
-    public void subscribeTopics(List<String> tokens, String topic) throws ExecutionException, InterruptedException, JsonProcessingException {
+    public void subscribeTopics(List<String> uuids, String topic) throws ExecutionException, InterruptedException, JsonProcessingException {
         Topic topic1 = topicDao.getObject(topic);
+        List<String> subscribers = topic1.getSubscribers();
+        if (subscribers == null) {
+            subscribers = new ArrayList<>();
+            topic1.setSubscribers(subscribers);
+        }
         List<String> toAdd = new ArrayList<>();
-        for (String token : tokens) {
-            if (!topic1.getSubscribers().contains(token)) {
-                toAdd.add(token);
+        for (String uuid : uuids) {
+            if (!subscribers.contains(uuid)) {
+                toAdd.add(uuid);
             }
         }
         topic1.getSubscribers().addAll(toAdd);
         topicDao.setObject(topic1);
     }
 
-    public void unsubscribeTopics(List<String> topics, String token) throws ExecutionException, InterruptedException, JsonProcessingException {
+    public void unsubscribeTopics(List<String> topics, String uuid) throws ExecutionException, InterruptedException, JsonProcessingException {
         for (String topic : topics) {
             Topic topic1 = topicDao.getObject(topic);
-            topic1.getSubscribers().remove(token);
+            topic1.getSubscribers().remove(uuid);
             topicDao.setObject(topic1);
         }
     }
 
     public List<String> getTopics() throws ExecutionException, InterruptedException, JsonProcessingException {
-        List<Topic> list = topicDao.getObjects(0, 1000);
+        List<Topic> list = topicDao.getObjects(0, 65535);
         List<String> topics = new ArrayList<>();
         for (Topic topic : list) {
             topics.add(topic.getUuid());
         }
         return topics;
+    }
+
+    public Topic getTopic(String topic) throws ExecutionException, InterruptedException, JsonProcessingException {
+        return topicDao.getObject(topic);
+    }
+
+    public Device getDeviceByToken(String token) throws ExecutionException, InterruptedException, JsonProcessingException {
+        return deviceDao.getByToken(token);
+    }
+
+    public Device getDeviceByUid(String uid) throws ExecutionException, InterruptedException, JsonProcessingException {
+        return deviceDao.getByUid(uid);
     }
 }

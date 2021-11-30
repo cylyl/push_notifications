@@ -45,7 +45,7 @@ public class FcmController {
             @RequestParam(name = "uuid") String uuid,
             @RequestParam(name = "topic") String topic
     ) {
-        return new ResponseEntity<>(pushManager.subscribeTopics(uuid, topic), HttpStatus.OK);
+        return new ResponseEntity<>(pushManager.subscribeTopic(uuid, topic), HttpStatus.OK);
     }
 
     @PutMapping("/topic/unsubscribe")

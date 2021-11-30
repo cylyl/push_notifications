@@ -55,6 +55,7 @@ public class TopicDao extends AbstractDao<Topic> {
             } else {
                 ApiFuture<DocumentReference> doc = getCollection().add(map);
                 topic.setUuid(doc.get().getId());
+                setObject(topic);
             }
         }
         return topic.getUuid();

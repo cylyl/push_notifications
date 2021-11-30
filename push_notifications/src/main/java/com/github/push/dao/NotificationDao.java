@@ -55,6 +55,7 @@ public class NotificationDao extends AbstractDao<Notification> {
             } else {
                 ApiFuture<DocumentReference> doc = getCollection().add(map);
                 notification.setUuid(doc.get().getId());
+                setObject(notification);
             }
         }
         return notification.getUuid();

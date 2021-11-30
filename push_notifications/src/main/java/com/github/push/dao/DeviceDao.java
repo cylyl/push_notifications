@@ -55,6 +55,7 @@ public class DeviceDao extends AbstractDao<Device> {
             } else {
                 ApiFuture<DocumentReference> doc = getCollection().add(map);
                 device.setUuid(doc.get().getId());
+                setObject(device);
             }
         }
         return device.getUuid();
@@ -65,4 +66,21 @@ public class DeviceDao extends AbstractDao<Device> {
         return device.getUuid() != null && getCollection().document(device.getUuid()).get().get().exists();
     }
 
+    public Device getByToken(String token) throws ExecutionException, InterruptedException, JsonProcessingException {
+        return get("token", token);
+    }
+
+    public Device getByUid(String uid) throws ExecutionException, InterruptedException, JsonProcessingException {
+        return get("uid", uid);
+    }
+
+    private Device get(String w, String v) throws ExecutionException, InterruptedException, JsonProcessingException {
+        Query query = getCollection().whereEqualTo(w, v);
+        ApiFuture<QuerySnapshot> snap = query.get();
+        for (QueryDocumentSnapshot queryDocumentSnapshot : snap.get().getDocuments()
+        ) {
+            return readObject(queryDocumentSnapshot.getData());
+        }
+        return null;
+    }
 }

@@ -2,6 +2,7 @@ package com.github.push;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.push.model.Notification;
+import com.github.push.model.Topic;
 import com.github.push.model.messaging.Message;
 import com.github.push.push.Device;
 import com.github.push.push.FcmManager;
@@ -10,6 +11,8 @@ import com.github.push.push.Push;
 import com.github.push.store.StoreManager;
 import com.github.push.utils.Mapper;
 import com.google.firebase.messaging.FirebaseMessagingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,6 +21,8 @@ import java.util.concurrent.ExecutionException;
 
 
 public class PushManager implements Push, PubSub, Device {
+
+    Logger logger = LoggerFactory.getLogger(PushManager.class);
 
     private StoreManager storeManager = new StoreManager();
     private FcmManager fcmManager = new FcmManager();
@@ -28,6 +33,19 @@ public class PushManager implements Push, PubSub, Device {
     public com.github.push.model.Device getDevice(String uuid) {
         try {
             return storeManager.getDevice(uuid);
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public com.github.push.model.Device getDeviceByUid(String uid) {
+        try {
+            return storeManager.getDeviceByUid(uid);
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -52,12 +70,16 @@ public class PushManager implements Push, PubSub, Device {
         }
     }
 
-    public int subscribeTopics(String uuid, String topic) {
-        return subscribeTopics(Collections.singletonList(getDevice(uuid).getToken()), topic);
+    public int subscribeTopic(List<String> uuids, String topic) {
+        return subscribeTopics(uuids, topic);
+    }
+
+    public int subscribeTopic(String uuid, String topic) {
+        return subscribeTopics(Collections.singletonList(uuid), topic);
     }
 
     public int unsubscribeTopics(String uuid, String topic) {
-        return unsubscribeTopics(Collections.singletonList(getDevice(uuid).getToken()), topic);
+        return unsubscribeTopics(Collections.singletonList(topic), uuid);
     }
 
     @Override
@@ -76,13 +98,27 @@ public class PushManager implements Push, PubSub, Device {
 
     @Override
     public List getTopics(String topic) {
+        return getTopic(topic).getSubscribers();
+    }
+
+    public Topic getTopic(String topic) {
+        try {
+            return storeManager.getTopic(topic);
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
         return null;
     }
 
     @Override
-    public int subscribeTopics(List<String> tokens, String topic) {
+    public int subscribeTopics(List<String> uuids, String topic) {
         try {
-            storeManager.subscribeTopics(tokens, topic);
+            storeManager.subscribeTopics(uuids, topic);
+            List<String> tokens = getToken(uuids);
             return fcmManager.subscribeTopics(tokens, topic);
         } catch (FirebaseMessagingException e) {
             e.printStackTrace();
@@ -96,11 +132,32 @@ public class PushManager implements Push, PubSub, Device {
         return 0;
     }
 
+    public int subscribeTopics(String uuid, List<String> topics) {
+        int count = 0;
+        for (String topic : topics
+        ) {
+            count += subscribeTopic(uuid, topic);
+        }
+        return count;
+    }
+
+    private List<String> getToken(List<String> uuids) {
+        List<String> tokens = new ArrayList<>();
+        for (String uuid : uuids
+        ) {
+            String token = getDevice(uuid).getToken();
+            if (token != null) {
+                tokens.add(token);
+            }
+        }
+        return tokens;
+    }
+
     @Override
-    public int unsubscribeTopics(List<String> topics, String token) {
+    public int unsubscribeTopics(List<String> topics, String uuid) {
         try {
-            storeManager.unsubscribeTopics(topics, token);
-            return fcmManager.unsubscribeTopics(topics, token);
+            storeManager.unsubscribeTopics(topics, uuid);
+            return fcmManager.unsubscribeTopics(topics, getDevice(uuid).getToken());
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -113,10 +170,8 @@ public class PushManager implements Push, PubSub, Device {
         return 0;
     }
 
-
-    @Override
-    public String push(String uuid, com.github.push.model.messaging.Message message) {
-        com.github.push.model.Device device = getDevice(uuid);
+    public String push(com.github.push.model.Device device,
+                       com.github.push.model.messaging.Message message) {
         if (device.getToken().equals(message.getToken()) == false) {
             message = new Message(
                     message.getName(),
@@ -148,5 +203,60 @@ public class PushManager implements Push, PubSub, Device {
         }
         return res;
     }
+
+    @Override
+    public String push(String uuid, com.github.push.model.messaging.Message message) {
+        com.github.push.model.Device device = getDevice(uuid);
+        return push(device, message);
+    }
+
+    String pushSimpleMessage(String uuid, String title, String body) {
+        final Message message = new Message(
+                null,
+                null,
+                new com.github.push.model.messaging.Notification(title, body, null),
+                /*AndroidConfig*/ null,
+                /*String token*/ null,
+                /*String topic*/ null,
+                null,
+                null,
+                null
+        );
+        return push(uuid, message);
+    }
+
+    public void pushSimpleMessageToTopic(String topic, String title, String body) throws FirebaseMessagingException {
+        Topic topic1 = getTopic(topic);
+        final Message message = new Message(
+                null,
+                null,
+                new com.github.push.model.messaging.Notification(title, body, null),
+                /*AndroidConfig*/ null,
+                /*String token*/ null,
+                /*String topic*/ topic,
+                null,
+                null,
+                null
+        );
+        String res = fcmManager.push(Mapper.mapMessage(message));
+        logger.debug(res);
+        Notification notification = Mapper.getNotification(message);
+        if (notification != null) {
+            for (String uuid : topic1.getSubscribers()
+            ) {
+                com.github.push.model.Device device = getDevice(uuid);
+                try {
+                    storeManager.setNotification(device, notification);
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
 
 }
