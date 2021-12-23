@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 
@@ -43,7 +44,7 @@ public class PushManager implements Push, PubSub, Device {
         return null;
     }
 
-    public com.github.push.model.Device getDeviceByUid(String uid) {
+    public List<com.github.push.model.Device> getDeviceByUid(String uid) {
         try {
             return storeManager.getDeviceByUid(uid);
         } catch (ExecutionException e) {
@@ -82,6 +83,46 @@ public class PushManager implements Push, PubSub, Device {
         return unsubscribeTopics(Collections.singletonList(topic), uuid);
     }
 
+    public int subscribeTopicUid(String uid, String topic) {
+        List<com.github.push.model.Device> deviceList = getDeviceByUid(uid);
+        List<String> uuids = new ArrayList<>();
+        for (com.github.push.model.Device device : deviceList) {
+            Optional<Topic> optionalTopic = getTopic(topic);
+            if (optionalTopic.isPresent()) {
+                List<String> list = optionalTopic.get().getSubscribers();
+                if (list == null) {
+                    list = new java.util.ArrayList<>();
+                }
+                if (list.contains(device.getUuid())) {
+                } else {
+                    uuids.add(device.getUuid());
+                }
+
+            }
+        }
+        return subscribeTopics(uuids, topic);
+    }
+
+    public int unsubscribeTopicUid(String uid, String topic) {
+        List<com.github.push.model.Device> deviceList = getDeviceByUid(uid);
+        int count = 0;
+        for (com.github.push.model.Device device : deviceList) {
+            Optional<Topic> optionalTopic = getTopic(topic);
+            if (optionalTopic.isPresent()) {
+                List<String> list = optionalTopic.get().getSubscribers();
+                if (list == null) {
+                    list = new java.util.ArrayList<>();
+                }
+                if (list.contains(device.getUuid())) {
+                    count += unsubscribeTopics(Collections.singletonList(topic), device.getUuid());
+                } else {
+                }
+
+            }
+        }
+        return count;
+    }
+
     @Override
     public List<String> getTopics() {
         try {
@@ -98,10 +139,14 @@ public class PushManager implements Push, PubSub, Device {
 
     @Override
     public List getTopics(String topic) {
-        return getTopic(topic).getSubscribers();
+        Optional<Topic> opt = getTopic(topic);
+        if (opt.isPresent()) {
+            return opt.get().getSubscribers();
+        }
+        return new ArrayList();
     }
 
-    public Topic getTopic(String topic) {
+    public Optional<Topic> getTopic(String topic) {
         try {
             return storeManager.getTopic(topic);
         } catch (ExecutionException e) {
@@ -118,10 +163,7 @@ public class PushManager implements Push, PubSub, Device {
     public int subscribeTopics(List<String> uuids, String topic) {
         try {
             storeManager.subscribeTopics(uuids, topic);
-            List<String> tokens = getToken(uuids);
-            return fcmManager.subscribeTopics(tokens, topic);
-        } catch (FirebaseMessagingException e) {
-            e.printStackTrace();
+            return uuids.size();
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -157,18 +199,17 @@ public class PushManager implements Push, PubSub, Device {
     public int unsubscribeTopics(List<String> topics, String uuid) {
         try {
             storeManager.unsubscribeTopics(topics, uuid);
-            return fcmManager.unsubscribeTopics(topics, getDevice(uuid).getToken());
+            return 1;
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (JsonProcessingException e) {
             e.printStackTrace();
-        } catch (FirebaseMessagingException e) {
-            e.printStackTrace();
         }
         return 0;
     }
+
 
     public String push(com.github.push.model.Device device,
                        com.github.push.model.messaging.Message message) {
@@ -226,7 +267,11 @@ public class PushManager implements Push, PubSub, Device {
     }
 
     public void pushSimpleMessageToTopic(String topic, String title, String body) throws FirebaseMessagingException {
-        Topic topic1 = getTopic(topic);
+        Optional<Topic> opt = getTopic(topic);
+        if (opt.isPresent() == false) {
+            return;
+        }
+        Topic topic1 = opt.get();
         final Message message = new Message(
                 null,
                 null,

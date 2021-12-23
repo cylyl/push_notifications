@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 //https://github.com/googleapis/java-firestore/blob/bca822734af6e037d90c743ff1ee61e6380de11f/samples/snippets/src/main/java/com/example/firestore/Quickstart.java#L84-L94
@@ -91,15 +92,15 @@ public class StoreManager {
         return topics;
     }
 
-    public Topic getTopic(String topic) throws ExecutionException, InterruptedException, JsonProcessingException {
-        return topicDao.getObject(topic);
+    public Optional<Topic> getTopic(String topic) throws ExecutionException, InterruptedException, JsonProcessingException {
+        return Optional.ofNullable(topicDao.getObject(topic));
     }
 
-    public Device getDeviceByToken(String token) throws ExecutionException, InterruptedException, JsonProcessingException {
+    public List<Device> getDeviceByToken(String token) throws ExecutionException, InterruptedException, JsonProcessingException {
         return deviceDao.getByToken(token);
     }
 
-    public Device getDeviceByUid(String uid) throws ExecutionException, InterruptedException, JsonProcessingException {
+    public List<Device> getDeviceByUid(String uid) throws ExecutionException, InterruptedException, JsonProcessingException {
         return deviceDao.getByUid(uid);
     }
 }
