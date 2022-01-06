@@ -1,10 +1,13 @@
 package com.github.push.utils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.push.model.messaging.ApnsAlert;
 import com.github.push.model.messaging.ApnsPayload;
 import com.google.firebase.messaging.*;
 
 public class Mapper {
+    private static ObjectMapper objectMapper = new ObjectMapper();
 
     public static Message mapMessage(com.github.push.model.messaging.Message message) {
         Message.Builder builder = Message.builder();
@@ -105,12 +108,14 @@ public class Mapper {
         return builder.build();
     }
 
-    public static com.github.push.model.Notification getNotification(com.github.push.model.messaging.Message message) {
+    public static com.github.push.model.Notification getNotification(com.github.push.model.messaging.Message message) throws JsonProcessingException {
         com.github.push.model.Notification notification = new com.github.push.model.Notification();
+        notification.setApp_id(message.getName());
         notification.setBody(message.getNotification().getBody());
         notification.setTitle(message.getNotification().getTitle());
         notification.setUnread(true);
         notification.setType(message.getTopic());
+        notification.setData(objectMapper.writeValueAsString(message.getData()));
         notification.setCreated_at(System.currentTimeMillis());
         return notification;
     }

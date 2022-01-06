@@ -2,14 +2,12 @@ package com.github.push.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Map;
-
 public class Notification extends Doc {
 
     @JsonProperty("reference_id")
     private String reference_id;
     @JsonProperty("data")
-    private Map<String, Object> data;
+    private String data;
     @JsonProperty("unread")
     private boolean unread;
     @JsonProperty("created_at")
@@ -21,7 +19,7 @@ public class Notification extends Doc {
     @JsonProperty("body")
     private String body;
     @JsonProperty("app_id")
-    private Integer app_id;
+    private String app_id;
     @JsonProperty("sender_id")
     private String sender_id;
     @JsonProperty("recipient_id")
@@ -35,11 +33,11 @@ public class Notification extends Doc {
         this.reference_id = reference_id;
     }
 
-    public Map<String, Object> getData() {
+    public String getData() {
         return this.data;
     }
 
-    public void setData(Map<String, Object> data) {
+    public void setData(String data) {
         this.data = data;
     }
 
@@ -83,11 +81,11 @@ public class Notification extends Doc {
         this.body = body;
     }
 
-    public Integer getApp_id() {
+    public String getApp_id() {
         return this.app_id;
     }
 
-    public void setApp_id(Integer app_id) {
+    public void setApp_id(String app_id) {
         this.app_id = app_id;
     }
 

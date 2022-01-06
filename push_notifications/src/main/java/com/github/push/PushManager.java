@@ -226,10 +226,11 @@ public class PushManager implements Push, PubSub, Device {
                     message.getWebpushConfig()
             );
         }
-        Notification notification = Mapper.getNotification(message);
+
         String res = null;
         try {
             res = fcmManager.push(Mapper.mapMessage(message));
+            Notification notification = Mapper.getNotification(message);
             if (notification != null) {
                 storeManager.setNotification(device, notification);
             }
@@ -285,21 +286,23 @@ public class PushManager implements Push, PubSub, Device {
         );
         String res = fcmManager.push(Mapper.mapMessage(message));
         logger.debug(res);
-        Notification notification = Mapper.getNotification(message);
-        if (notification != null) {
-            for (String uuid : topic1.getSubscribers()
-            ) {
-                com.github.push.model.Device device = getDevice(uuid);
-                try {
-                    storeManager.setNotification(device, notification);
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (JsonProcessingException e) {
-                    e.printStackTrace();
+        try {
+            Notification notification = Mapper.getNotification(message);
+            if (notification != null) {
+                for (String uuid : topic1.getSubscribers()
+                ) {
+                    com.github.push.model.Device device = getDevice(uuid);
+                    try {
+                        storeManager.setNotification(device, notification);
+                    } catch (ExecutionException e) {
+                        e.printStackTrace();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
         }
     }
 
