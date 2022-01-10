@@ -25,8 +25,8 @@ public class PushManager implements Push, PubSub, Device {
 
     Logger logger = LoggerFactory.getLogger(PushManager.class);
 
-    private StoreManager storeManager = new StoreManager();
-    private FcmManager fcmManager = new FcmManager();
+    final private StoreManager storeManager = new StoreManager();
+    final private FcmManager fcmManager = new FcmManager();
 
     public PushManager() {
     }
@@ -138,7 +138,7 @@ public class PushManager implements Push, PubSub, Device {
     }
 
     @Override
-    public List getTopics(String topic) {
+    public List<String> getTopics(String topic) {
         Optional<Topic> opt = getTopic(topic);
         if (opt.isPresent()) {
             return opt.get().getSubscribers();
@@ -288,7 +288,6 @@ public class PushManager implements Push, PubSub, Device {
         logger.debug(res);
         try {
             Notification notification = Mapper.getNotification(message);
-            if (notification != null) {
                 for (String uuid : topic1.getSubscribers()
                 ) {
                     com.github.push.model.Device device = getDevice(uuid);
@@ -300,11 +299,23 @@ public class PushManager implements Push, PubSub, Device {
                         e.printStackTrace();
                     }
                 }
-            }
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
     }
 
 
+    public void unsubscribeAll() throws ExecutionException, InterruptedException, JsonProcessingException {
+        storeManager.getTopics().forEach(topic -> {
+            try {
+                storeManager.DeleteTopicsSubscribers(topic);
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+        });
+    }
 }

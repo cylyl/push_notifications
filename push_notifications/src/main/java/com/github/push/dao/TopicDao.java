@@ -66,4 +66,9 @@ public class TopicDao extends AbstractDao<Topic> {
         return topic.getUuid() != null && getCollection().document(topic.getUuid()).get().get().exists();
     }
 
+    public void deleteSubscribers(String topic) throws ExecutionException, InterruptedException, JsonProcessingException {
+        Topic topic1 = getObject(topic);
+        topic1.setSubscribers(new ArrayList<>());
+        setObject(topic1);
+    }
 }

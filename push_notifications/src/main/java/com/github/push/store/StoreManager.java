@@ -21,10 +21,10 @@ import java.util.concurrent.ExecutionException;
 //https://github.com/googleapis/java-firestore/blob/bca822734af6e037d90c743ff1ee61e6380de11f/samples/snippets/src/main/java/com/example/firestore/Quickstart.java#L84-L94
 public class StoreManager {
     Logger logger = LoggerFactory.getLogger(StoreManager.class);
-    private ObjectMapper objectMapper = new ObjectMapper();
-    private Firestore db;
-    private DeviceDao deviceDao;
-    private TopicDao topicDao;
+    final private ObjectMapper objectMapper = new ObjectMapper();
+    final private Firestore db;
+    final private DeviceDao deviceDao;
+    final private TopicDao topicDao;
 
     public StoreManager() {
         Firestore db = FirestoreClient.getFirestore();
@@ -102,5 +102,9 @@ public class StoreManager {
 
     public List<Device> getDeviceByUid(String uid) throws ExecutionException, InterruptedException, JsonProcessingException {
         return deviceDao.getByUid(uid);
+    }
+
+    public void DeleteTopicsSubscribers(String topic) throws ExecutionException, InterruptedException, JsonProcessingException {
+        topicDao.deleteSubscribers(topic);
     }
 }
