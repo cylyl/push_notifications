@@ -2,11 +2,14 @@ package com.github.push.store;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.push.StringUtils;
 import com.github.push.dao.DeviceDao;
 import com.github.push.dao.NotificationDao;
+import com.github.push.dao.TabDao;
 import com.github.push.dao.TopicDao;
 import com.github.push.model.Device;
 import com.github.push.model.Notification;
+import com.github.push.model.Tab;
 import com.github.push.model.Topic;
 import com.google.cloud.firestore.Firestore;
 import com.google.firebase.cloud.FirestoreClient;
@@ -26,11 +29,11 @@ public class StoreManager {
     final private DeviceDao deviceDao;
     final private TopicDao topicDao;
 
-    public StoreManager() {
+    public StoreManager(int cacheExpireAfterAccess, int cacheMaximumSize) {
         Firestore db = FirestoreClient.getFirestore();
         this.db = db;
-        deviceDao = new DeviceDao(db);
-        topicDao = new TopicDao(db);
+        deviceDao = new DeviceDao(db, cacheExpireAfterAccess, cacheMaximumSize);
+        topicDao = new TopicDao(db, cacheExpireAfterAccess, cacheMaximumSize);
     }
 
     public Device getDevice(String uuid) throws ExecutionException, InterruptedException, JsonProcessingException {
@@ -54,7 +57,8 @@ public class StoreManager {
 
     private NotificationDao getNotificationDao(Device device) {
         return new NotificationDao(
-                db, deviceDao.getCollectionName() + "/" + device.getUuid() + "/"
+                db, deviceDao.getCollectionName() + "/" + device.getUuid() + "/",
+                1, 65535
         );
     }
 
@@ -106,5 +110,46 @@ public class StoreManager {
 
     public void DeleteTopicsSubscribers(String topic) throws ExecutionException, InterruptedException, JsonProcessingException {
         topicDao.deleteSubscribers(topic);
+    }
+
+    public void updateInboxTabs() throws ExecutionException, InterruptedException, JsonProcessingException {
+
+        TabDao tabDao = new TabDao(db, 1, 65535);
+        topicDao.getObjects(0, 65535).forEach(topic -> {
+            String uuid = topic.getUuid();
+            if (uuid.contains("-")) {
+                String[] split = uuid.trim().split("-");
+                if (split.length > 1) {
+                    try {
+                        Tab tab = tabDao.getObject(
+                                StringUtils.capitalizeString(split[1]));
+                        if (tab != null) {
+                            tab.setLevel(0);
+                            tab.setLast_updated(System.currentTimeMillis());
+                            if (split.length > 2) {
+                                String tabUuid = StringUtils.capitalizeString(split[2]);
+                                List<Tab> tabs = tab.getTabs();
+                                if (tabs == null) tabs = new ArrayList<>();
+                                if (!Tab.consist(tabs, tabUuid)) {
+                                    Tab tab1 = new Tab();
+                                    tab1.setUuid(tabUuid);
+                                    tab1.setLevel(1);
+                                    tab1.setLast_updated(System.currentTimeMillis());
+                                    tabs.add(tab1);
+                                }
+                                tab.setTabs(tabs);
+                            }
+                            tabDao.setObject(tab);
+                        }
+                    } catch (ExecutionException e) {
+                        e.printStackTrace();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } catch (JsonProcessingException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
     }
 }

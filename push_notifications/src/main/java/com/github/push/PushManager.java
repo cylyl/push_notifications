@@ -25,7 +25,9 @@ public class PushManager implements Push, PubSub, Device {
 
     Logger logger = LoggerFactory.getLogger(PushManager.class);
 
-    final private StoreManager storeManager = new StoreManager();
+    final private StoreManager storeManager = new StoreManager(
+            1, 65535
+    );
     final private FcmManager fcmManager = new FcmManager();
 
     public PushManager() {

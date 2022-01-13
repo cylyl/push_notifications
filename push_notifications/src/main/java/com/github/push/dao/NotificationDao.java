@@ -5,16 +5,14 @@ import com.github.push.model.Notification;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 public class NotificationDao extends AbstractDao<Notification> {
 
-    public NotificationDao(Firestore firestore, String path) {
-        super(firestore, Notification.class, path + "notifications");
+    public NotificationDao(Firestore firestore, String path, int cacheExpireAfterAccess, int cacheMaximumSize) {
+        super(firestore, Notification.class, path + "notifications"
+                , cacheExpireAfterAccess, cacheMaximumSize);
     }
 
     @Override
@@ -29,20 +27,13 @@ public class NotificationDao extends AbstractDao<Notification> {
 
     @Override
     public Notification getObject(String id) throws ExecutionException, InterruptedException, JsonProcessingException {
-        DocumentReference doc = getCollection().document(id);
-        logger.info("[getObject]" + doc.getPath());
-        if (!doc.get().get().exists()) {
-            Notification notification = new Notification();
-            notification.setUuid(id);
-            id = setObject(notification);
-            return getObject(id);
-        } else {
-            return readObject(doc.get().get().getData());
-        }
+        List<Notification> list = cache.getUnchecked("uuid:" + id);
+        return list.size() > 0 ? list.get(0) : null;
     }
 
     @Override
     public String setObject(Notification notification) throws ExecutionException, InterruptedException, JsonProcessingException {
+        cache.refresh("uuid:" + notification.getUuid());
         logger.info("[setObject] notification...");
         boolean exist = isExist(notification);
         Map<String, Object> map = objectMapper.readValue(objectMapper.writeValueAsString(notification), HashMap.class);
@@ -66,4 +57,28 @@ public class NotificationDao extends AbstractDao<Notification> {
         return notification.getUuid() != null && getCollection().document(notification.getUuid()).get().get().exists();
     }
 
+    @Override
+    public List<Notification> load(String id) throws Exception {
+        String[] q = id.split(":");
+        if (id.startsWith("uuid:")) {
+            Notification notification;
+            DocumentReference doc = getCollection().document(q[1]);
+            logger.info("[getObject]" + doc.getPath());
+            if (!doc.get().get().exists()) {
+                notification = new Notification();
+                notification.setUuid(id);
+                id = setObject(notification);
+                notification = getObject(id);
+            } else {
+                notification = readObject(doc.get().get().getData());
+            }
+            return Collections.singletonList(notification);
+        } else {
+            return getObjects(q[0], q[1]);
+        }
+    }
+
+    private List<Notification> getObjects(String s, String s1) {
+        return Collections.EMPTY_LIST;
+    }
 }

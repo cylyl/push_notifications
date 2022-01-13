@@ -5,16 +5,14 @@ import com.github.push.model.Topic;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 public class TopicDao extends AbstractDao<Topic> {
 
-    public TopicDao(Firestore firestore) {
-        super(firestore, Topic.class, "topics");
+    public TopicDao(Firestore firestore, int cacheExpireAfterAccess, int cacheMaximumSize) {
+        super(firestore, Topic.class, "topics"
+                , cacheExpireAfterAccess, cacheMaximumSize);
     }
 
     @Override
@@ -29,20 +27,13 @@ public class TopicDao extends AbstractDao<Topic> {
 
     @Override
     public Topic getObject(String id) throws ExecutionException, InterruptedException, JsonProcessingException {
-        DocumentReference doc = getCollection().document(id);
-        logger.info("[getObject]" + doc.getPath());
-        if (!doc.get().get().exists()) {
-            Topic topic = new Topic();
-            topic.setUuid(id);
-            id = setObject(topic);
-            return getObject(id);
-        } else {
-            return readObject(doc.get().get().getData());
-        }
+        List<Topic> list = cache.getUnchecked("uuid:" + id);
+        return list.size() > 0 ? list.get(0) : null;
     }
 
     @Override
     public String setObject(Topic topic) throws ExecutionException, InterruptedException, JsonProcessingException {
+        cache.refresh("uuid:" + topic.getUuid());
         logger.info("[setObject] topic...");
         boolean exist = isExist(topic);
         Map<String, Object> map = objectMapper.readValue(objectMapper.writeValueAsString(topic), HashMap.class);
@@ -70,5 +61,30 @@ public class TopicDao extends AbstractDao<Topic> {
         Topic topic1 = getObject(topic);
         topic1.setSubscribers(new ArrayList<>());
         setObject(topic1);
+    }
+
+    @Override
+    public List<Topic> load(String id) throws Exception {
+        String[] q = id.split(":");
+        if (id.startsWith("uuid:")) {
+            Topic topic;
+            DocumentReference doc = getCollection().document(q[1]);
+            logger.info("[getObject]" + doc.getPath());
+            if (!doc.get().get().exists()) {
+                topic = new Topic();
+                topic.setUuid(id);
+                id = setObject(topic);
+                topic = getObject(id);
+            } else {
+                topic = readObject(doc.get().get().getData());
+            }
+            return Collections.singletonList(topic);
+        } else {
+            return getObjects(q[0], q[1]);
+        }
+    }
+
+    private List<Topic> getObjects(String s, String s1) {
+        return Collections.EMPTY_LIST;
     }
 }

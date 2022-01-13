@@ -5,16 +5,14 @@ import com.github.push.model.Device;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 public class DeviceDao extends AbstractDao<Device> {
 
-    public DeviceDao(Firestore firestore) {
-        super(firestore, Device.class, "devices");
+    public DeviceDao(Firestore firestore, int cacheExpireAfterAccess, int cacheMaximumSize) {
+        super(firestore, Device.class, "devices"
+                , cacheExpireAfterAccess, cacheMaximumSize);
     }
 
     @Override
@@ -29,20 +27,13 @@ public class DeviceDao extends AbstractDao<Device> {
 
     @Override
     public Device getObject(String id) throws ExecutionException, InterruptedException, JsonProcessingException {
-        DocumentReference doc = getCollection().document(id);
-        logger.info("[getObject]" + doc.getPath());
-        if (!doc.get().get().exists()) {
-            Device device = new Device();
-            device.setUuid(id);
-            id = setObject(device);
-            return getObject(id);
-        } else {
-            return readObject(doc.get().get().getData());
-        }
+        List<Device> list = cache.getUnchecked("uuid:" + id);
+        return list.size() > 0 ? list.get(0) : null;
     }
 
     @Override
     public String setObject(Device device) throws ExecutionException, InterruptedException, JsonProcessingException {
+        cache.refresh("uuid:" + device.getUuid());
         logger.info("[setObject] device...");
         boolean exist = isExist(device);
         Map<String, Object> map = objectMapper.readValue(objectMapper.writeValueAsString(device), HashMap.class);
@@ -67,11 +58,11 @@ public class DeviceDao extends AbstractDao<Device> {
     }
 
     public List<Device> getByToken(String token) throws ExecutionException, InterruptedException, JsonProcessingException {
-        return getObjects("token", token);
+        return cache.getUnchecked("token:" + token);
     }
 
     public List<Device> getByUid(String uid) throws ExecutionException, InterruptedException, JsonProcessingException {
-        return getObjects("uid", uid);
+        return cache.getUnchecked("uid:" + uid);
     }
 
     private List<Device> getObjects(String w, String v) throws ExecutionException, InterruptedException, JsonProcessingException {
@@ -83,5 +74,27 @@ public class DeviceDao extends AbstractDao<Device> {
             list.add(readObject(queryDocumentSnapshot.getData()));
         }
         return list;
+    }
+
+
+    @Override
+    public List<Device> load(String id) throws Exception {
+        String[] q = id.split(":");
+        if (id.startsWith("uuid:")) {
+            Device device;
+            DocumentReference doc = getCollection().document(q[1]);
+            logger.info("[getObject]" + doc.getPath());
+            if (!doc.get().get().exists()) {
+                device = new Device();
+                device.setUuid(id);
+                id = setObject(device);
+                device = getObject(id);
+            } else {
+                device = readObject(doc.get().get().getData());
+            }
+            return Collections.singletonList(device);
+        } else {
+            return getObjects(q[0], q[1]);
+        }
     }
 }

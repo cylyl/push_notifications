@@ -2,6 +2,7 @@ package com.github.push.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.push.StringUtils;
 import com.github.push.model.messaging.ApnsAlert;
 import com.github.push.model.messaging.ApnsPayload;
 import com.google.firebase.messaging.*;
@@ -117,6 +118,17 @@ public class Mapper {
         notification.setType(message.getTopic());
         notification.setData(objectMapper.writeValueAsString(message.getData()));
         notification.setCreated_at(System.currentTimeMillis());
+        notification.setType(resolveNotificationType(notification));
         return notification;
+    }
+
+    public static String resolveNotificationType(com.github.push.model.Notification notification) {
+        String title = notification.getTitle();
+        if (title.contains("-")) {
+            return StringUtils.capitalizeString(title.trim().split("-")[1]);
+        } else if (title.contains(" ")) {
+            return StringUtils.capitalizeString(title.split(" ")[0]);
+        }
+        return StringUtils.capitalizeString(title);
     }
 }
