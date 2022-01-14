@@ -33,7 +33,6 @@ public class TabDao extends AbstractDao<Tab> {
 
     @Override
     public String setObject(Tab tab) throws ExecutionException, InterruptedException, JsonProcessingException {
-        cache.refresh("uuid:" + tab.getUuid());
         logger.info("[setObject] tab...");
         boolean exist = isExist(tab);
         Map<String, Object> map = objectMapper.readValue(objectMapper.writeValueAsString(tab), HashMap.class);
@@ -49,6 +48,7 @@ public class TabDao extends AbstractDao<Tab> {
                 setObject(tab);
             }
         }
+        cache.refresh("uuid:" + tab.getUuid());
         return tab.getUuid();
     }
 

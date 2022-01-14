@@ -33,7 +33,6 @@ public class TopicDao extends AbstractDao<Topic> {
 
     @Override
     public String setObject(Topic topic) throws ExecutionException, InterruptedException, JsonProcessingException {
-        cache.refresh("uuid:" + topic.getUuid());
         logger.info("[setObject] topic...");
         boolean exist = isExist(topic);
         Map<String, Object> map = objectMapper.readValue(objectMapper.writeValueAsString(topic), HashMap.class);
@@ -49,6 +48,7 @@ public class TopicDao extends AbstractDao<Topic> {
                 setObject(topic);
             }
         }
+        cache.refresh("uuid:" + topic.getUuid());
         return topic.getUuid();
     }
 

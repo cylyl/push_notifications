@@ -33,7 +33,6 @@ public class DeviceDao extends AbstractDao<Device> {
 
     @Override
     public String setObject(Device device) throws ExecutionException, InterruptedException, JsonProcessingException {
-        cache.refresh("uuid:" + device.getUuid());
         logger.info("[setObject] device...");
         boolean exist = isExist(device);
         Map<String, Object> map = objectMapper.readValue(objectMapper.writeValueAsString(device), HashMap.class);
@@ -49,6 +48,7 @@ public class DeviceDao extends AbstractDao<Device> {
                 setObject(device);
             }
         }
+        cache.refresh("uuid:" + device.getUuid());
         return device.getUuid();
     }
 

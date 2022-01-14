@@ -33,7 +33,6 @@ public class NotificationDao extends AbstractDao<Notification> {
 
     @Override
     public String setObject(Notification notification) throws ExecutionException, InterruptedException, JsonProcessingException {
-        cache.refresh("uuid:" + notification.getUuid());
         logger.info("[setObject] notification...");
         boolean exist = isExist(notification);
         Map<String, Object> map = objectMapper.readValue(objectMapper.writeValueAsString(notification), HashMap.class);
@@ -49,6 +48,7 @@ public class NotificationDao extends AbstractDao<Notification> {
                 setObject(notification);
             }
         }
+        cache.refresh("uuid:" + notification.getUuid());
         return notification.getUuid();
     }
 
