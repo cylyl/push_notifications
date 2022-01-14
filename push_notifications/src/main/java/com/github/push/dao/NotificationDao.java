@@ -61,14 +61,15 @@ public class NotificationDao extends AbstractDao<Notification> {
     public List<Notification> load(String id) throws Exception {
         String[] q = id.split(":");
         if (id.startsWith("uuid:")) {
+            id = q[1];
             Notification notification;
-            DocumentReference doc = getCollection().document(q[1]);
+            DocumentReference doc = getCollection().document(id);
             logger.info("[getObject]" + doc.getPath());
             if (!doc.get().get().exists()) {
                 notification = new Notification();
                 notification.setUuid(id);
                 id = setObject(notification);
-                notification = getObject(id);
+                notification = getObjects("uuid", id).get(0);
             } else {
                 notification = readObject(doc.get().get().getData());
             }
@@ -78,7 +79,4 @@ public class NotificationDao extends AbstractDao<Notification> {
         }
     }
 
-    private List<Notification> getObjects(String s, String s1) {
-        return Collections.EMPTY_LIST;
-    }
 }

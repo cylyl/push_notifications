@@ -2,16 +2,18 @@ package com.github.push.dao;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.cloud.firestore.CollectionReference;
-import com.google.cloud.firestore.Firestore;
+import com.google.api.core.ApiFuture;
+import com.google.cloud.firestore.*;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public abstract class AbstractDao<T> extends CacheLoader<String, List<T>> implements Dao<T> {
@@ -43,5 +45,16 @@ public abstract class AbstractDao<T> extends CacheLoader<String, List<T>> implem
 
     public String getCollectionName() {
         return collectionName;
+    }
+
+    List<T> getObjects(String w, String v) throws ExecutionException, InterruptedException, JsonProcessingException {
+        Query query = getCollection().whereEqualTo(w, v);
+        ApiFuture<QuerySnapshot> snap = query.get();
+        List<T> list = new ArrayList<>();
+        for (QueryDocumentSnapshot queryDocumentSnapshot : snap.get().getDocuments()
+        ) {
+            list.add(readObject(queryDocumentSnapshot.getData()));
+        }
+        return list;
     }
 }

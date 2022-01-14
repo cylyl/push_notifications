@@ -65,30 +65,22 @@ public class DeviceDao extends AbstractDao<Device> {
         return cache.getUnchecked("uid:" + uid);
     }
 
-    private List<Device> getObjects(String w, String v) throws ExecutionException, InterruptedException, JsonProcessingException {
-        Query query = getCollection().whereEqualTo(w, v);
-        ApiFuture<QuerySnapshot> snap = query.get();
-        List<Device> list = new ArrayList<>();
-        for (QueryDocumentSnapshot queryDocumentSnapshot : snap.get().getDocuments()
-        ) {
-            list.add(readObject(queryDocumentSnapshot.getData()));
-        }
-        return list;
-    }
+
 
 
     @Override
     public List<Device> load(String id) throws Exception {
         String[] q = id.split(":");
         if (id.startsWith("uuid:")) {
+            id = q[1];
             Device device;
-            DocumentReference doc = getCollection().document(q[1]);
+            DocumentReference doc = getCollection().document(id);
             logger.info("[getObject]" + doc.getPath());
             if (!doc.get().get().exists()) {
                 device = new Device();
                 device.setUuid(id);
                 id = setObject(device);
-                device = getObject(id);
+                device = getObjects("uuid", id).get(0);
             } else {
                 device = readObject(doc.get().get().getData());
             }

@@ -67,14 +67,15 @@ public class TopicDao extends AbstractDao<Topic> {
     public List<Topic> load(String id) throws Exception {
         String[] q = id.split(":");
         if (id.startsWith("uuid:")) {
+            id = q[1];
             Topic topic;
-            DocumentReference doc = getCollection().document(q[1]);
+            DocumentReference doc = getCollection().document(id);
             logger.info("[getObject]" + doc.getPath());
             if (!doc.get().get().exists()) {
                 topic = new Topic();
                 topic.setUuid(id);
                 id = setObject(topic);
-                topic = getObject(id);
+                topic = getObjects("uuid", id).get(0);
             } else {
                 topic = readObject(doc.get().get().getData());
             }
@@ -84,7 +85,4 @@ public class TopicDao extends AbstractDao<Topic> {
         }
     }
 
-    private List<Topic> getObjects(String s, String s1) {
-        return Collections.EMPTY_LIST;
-    }
 }

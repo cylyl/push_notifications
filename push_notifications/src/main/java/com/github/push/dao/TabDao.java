@@ -57,29 +57,19 @@ public class TabDao extends AbstractDao<Tab> {
         return tab.getUuid() != null && getCollection().document(tab.getUuid()).get().get().exists();
     }
 
-    private List<Tab> getObjects(String w, String v) throws ExecutionException, InterruptedException, JsonProcessingException {
-        Query query = getCollection().whereEqualTo(w, v);
-        ApiFuture<QuerySnapshot> snap = query.get();
-        List<Tab> list = new ArrayList<>();
-        for (QueryDocumentSnapshot queryDocumentSnapshot : snap.get().getDocuments()
-        ) {
-            list.add(readObject(queryDocumentSnapshot.getData()));
-        }
-        return list;
-    }
-
     @Override
     public List<Tab> load(String id) throws Exception {
         String[] q = id.split(":");
         if (id.startsWith("uuid:")) {
+            id = q[1];
             Tab tab;
-            DocumentReference doc = getCollection().document(q[1]);
+            DocumentReference doc = getCollection().document(id);
             logger.info("[getObject]" + doc.getPath());
             if (!doc.get().get().exists()) {
                 tab = new Tab();
                 tab.setUuid(id);
                 id = setObject(tab);
-                tab = getObject(id);
+                tab = getObjects("uuid", id).get(0);
             } else {
                 tab = readObject(doc.get().get().getData());
             }
