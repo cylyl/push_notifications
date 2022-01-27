@@ -25,11 +25,6 @@ public class DeviceDao extends AbstractDao<Device> {
         return list;
     }
 
-    @Override
-    public Device getObject(String id) throws ExecutionException, InterruptedException, JsonProcessingException {
-        List<Device> list = cache.getUnchecked("uuid:" + id);
-        return list.size() > 0 ? list.get(0) : null;
-    }
 
     @Override
     public String setObject(Device device) throws ExecutionException, InterruptedException, JsonProcessingException {
@@ -58,11 +53,11 @@ public class DeviceDao extends AbstractDao<Device> {
     }
 
     public List<Device> getByToken(String token) throws ExecutionException, InterruptedException, JsonProcessingException {
-        return cache.getUnchecked("token:" + token);
+        return cache.get("token:" + token);
     }
 
     public List<Device> getByUid(String uid) throws ExecutionException, InterruptedException, JsonProcessingException {
-        return cache.getUnchecked("uid:" + uid);
+        return cache.get("uid:" + uid);
     }
 
 

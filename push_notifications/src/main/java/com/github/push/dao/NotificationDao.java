@@ -25,11 +25,6 @@ public class NotificationDao extends AbstractDao<Notification> {
         return list;
     }
 
-    @Override
-    public Notification getObject(String id) throws ExecutionException, InterruptedException, JsonProcessingException {
-        List<Notification> list = cache.getUnchecked("uuid:" + id);
-        return list.size() > 0 ? list.get(0) : null;
-    }
 
     @Override
     public String setObject(Notification notification) throws ExecutionException, InterruptedException, JsonProcessingException {

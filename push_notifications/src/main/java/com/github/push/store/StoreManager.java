@@ -64,6 +64,10 @@ public class StoreManager {
 
     public void subscribeTopics(List<String> uuids, String topic) throws ExecutionException, InterruptedException, JsonProcessingException {
         Topic topic1 = topicDao.getObject(topic);
+        if (topic1 == null) {
+            logger.info("[subscribeTopics] topic not found");
+            return;
+        }
         List<String> subscribers = topic1.getSubscribers();
         if (subscribers == null) {
             subscribers = new ArrayList<>();
@@ -75,13 +79,19 @@ public class StoreManager {
                 toAdd.add(uuid);
             }
         }
-        topic1.getSubscribers().addAll(toAdd);
-        topicDao.setObject(topic1);
+        if (!toAdd.isEmpty()) {
+            topic1.getSubscribers().addAll(toAdd);
+            topicDao.setObject(topic1);
+        }
     }
 
     public void unsubscribeTopics(List<String> topics, String uuid) throws ExecutionException, InterruptedException, JsonProcessingException {
         for (String topic : topics) {
             Topic topic1 = topicDao.getObject(topic);
+            if (topic1 == null) {
+                logger.info("[unsubscribeTopics] topic not found");
+                return;
+            }
             topic1.getSubscribers().remove(uuid);
             topicDao.setObject(topic1);
         }

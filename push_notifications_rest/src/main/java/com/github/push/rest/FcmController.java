@@ -1,5 +1,6 @@
 package com.github.push.rest;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.push.PushManager;
 import com.github.push.model.messaging.Message;
 import com.google.firebase.messaging.FirebaseMessagingException;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.concurrent.ExecutionException;
 
 @RestController
 public class FcmController {
@@ -36,7 +38,7 @@ public class FcmController {
 
     @GetMapping("/topics")
     public ResponseEntity getTopics(
-    ) {
+    ) throws ExecutionException, InterruptedException, JsonProcessingException {
         return new ResponseEntity<>(pushManager.getTopics(), HttpStatus.OK);
     }
 

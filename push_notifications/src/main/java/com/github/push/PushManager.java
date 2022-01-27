@@ -89,18 +89,29 @@ public class PushManager implements Push, PubSub, Device {
         List<com.github.push.model.Device> deviceList = getDeviceByUid(uid);
         List<String> uuids = new ArrayList<>();
         for (com.github.push.model.Device device : deviceList) {
-            Optional<Topic> optionalTopic = getTopic(topic);
-            if (optionalTopic.isPresent()) {
-                List<String> list = optionalTopic.get().getSubscribers();
-                if (list == null) {
-                    list = new java.util.ArrayList<>();
+            Optional<Topic> optionalTopic = null;
+            try {
+                optionalTopic = getTopic(topic);
+                if (optionalTopic.isPresent()) {
+                    List<String> list = optionalTopic.get().getSubscribers();
+                    if (list == null) {
+                        list = new java.util.ArrayList<>();
+                    }
+                    if (list.contains(device.getUuid())) {
+                    } else {
+                        uuids.add(device.getUuid());
+                    }
                 }
-                if (list.contains(device.getUuid())) {
-                } else {
-                    uuids.add(device.getUuid());
-                }
-
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
             }
+        }
+        if (uuids.isEmpty()) {
+            return 0;
         }
         return subscribeTopics(uuids, topic);
     }
@@ -109,38 +120,38 @@ public class PushManager implements Push, PubSub, Device {
         List<com.github.push.model.Device> deviceList = getDeviceByUid(uid);
         int count = 0;
         for (com.github.push.model.Device device : deviceList) {
-            Optional<Topic> optionalTopic = getTopic(topic);
-            if (optionalTopic.isPresent()) {
-                List<String> list = optionalTopic.get().getSubscribers();
-                if (list == null) {
-                    list = new java.util.ArrayList<>();
-                }
-                if (list.contains(device.getUuid())) {
-                    count += unsubscribeTopics(Collections.singletonList(topic), device.getUuid());
-                } else {
-                }
+            Optional<Topic> optionalTopic = null;
+            try {
+                optionalTopic = getTopic(topic);
+                if (optionalTopic.isPresent()) {
+                    List<String> list = optionalTopic.get().getSubscribers();
+                    if (list == null) {
+                        list = new java.util.ArrayList<>();
+                    }
+                    if (list.contains(device.getUuid())) {
+                        count += unsubscribeTopics(Collections.singletonList(topic), device.getUuid());
+                    } else {
+                    }
 
+                }
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
             }
         }
         return count;
     }
 
     @Override
-    public List<String> getTopics() {
-        try {
-            return storeManager.getTopics();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
-        return new ArrayList();
+    public List<String> getTopics() throws ExecutionException, InterruptedException, JsonProcessingException {
+        return storeManager.getTopics();
     }
 
     @Override
-    public List<String> getTopics(String topic) {
+    public List<String> getTopics(String topic) throws ExecutionException, InterruptedException, JsonProcessingException {
         Optional<Topic> opt = getTopic(topic);
         if (opt.isPresent()) {
             return opt.get().getSubscribers();
@@ -148,17 +159,8 @@ public class PushManager implements Push, PubSub, Device {
         return new ArrayList();
     }
 
-    public Optional<Topic> getTopic(String topic) {
-        try {
-            return storeManager.getTopic(topic);
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
-        return null;
+    public Optional<Topic> getTopic(String topic) throws ExecutionException, InterruptedException, JsonProcessingException {
+        return storeManager.getTopic(topic);
     }
 
     @Override
@@ -269,7 +271,7 @@ public class PushManager implements Push, PubSub, Device {
         return push(uuid, message);
     }
 
-    public void pushSimpleMessageToTopic(String topic, String title, String body) throws FirebaseMessagingException {
+    public void pushSimpleMessageToTopic(String topic, String title, String body) throws FirebaseMessagingException, ExecutionException, InterruptedException, JsonProcessingException {
         Optional<Topic> opt = getTopic(topic);
         if (opt.isPresent() == false) {
             return;

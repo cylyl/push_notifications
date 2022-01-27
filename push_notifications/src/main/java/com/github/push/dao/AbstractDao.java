@@ -57,4 +57,18 @@ public abstract class AbstractDao<T> extends CacheLoader<String, List<T>> implem
         }
         return list;
     }
+
+    @Override
+    public T getObject(String id) {
+        List<T> list = null;
+        try {
+            list = cache.get("uuid:" + id);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if (list == null || list.isEmpty()) {
+            return null;
+        }
+        return list.get(0);
+    }
 }

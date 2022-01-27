@@ -25,11 +25,6 @@ public class TabDao extends AbstractDao<Tab> {
         return list;
     }
 
-    @Override
-    public Tab getObject(String id) throws ExecutionException, InterruptedException, JsonProcessingException {
-        List<Tab> list = cache.getUnchecked("uuid:" + id);
-        return list.size() > 0 ? list.get(0) : null;
-    }
 
     @Override
     public String setObject(Tab tab) throws ExecutionException, InterruptedException, JsonProcessingException {

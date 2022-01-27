@@ -25,11 +25,7 @@ public class TopicDao extends AbstractDao<Topic> {
         return list;
     }
 
-    @Override
-    public Topic getObject(String id) throws ExecutionException, InterruptedException, JsonProcessingException {
-        List<Topic> list = cache.getUnchecked("uuid:" + id);
-        return list.size() > 0 ? list.get(0) : null;
-    }
+
 
     @Override
     public String setObject(Topic topic) throws ExecutionException, InterruptedException, JsonProcessingException {
@@ -59,6 +55,10 @@ public class TopicDao extends AbstractDao<Topic> {
 
     public void deleteSubscribers(String topic) throws ExecutionException, InterruptedException, JsonProcessingException {
         Topic topic1 = getObject(topic);
+        if (topic1 == null) {
+            logger.info("[deleteSubscribers] topic not found");
+            return;
+        }
         topic1.setSubscribers(new ArrayList<>());
         setObject(topic1);
     }

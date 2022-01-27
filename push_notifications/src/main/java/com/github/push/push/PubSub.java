@@ -1,6 +1,9 @@
 package com.github.push.push;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 public interface PubSub {
 
@@ -9,7 +12,7 @@ public interface PubSub {
      *
      * @return list of your app's topics and subscribers
      */
-    List getTopics();
+    List getTopics() throws ExecutionException, InterruptedException, JsonProcessingException;
 
     /**
      * Retrieve a list of devices subscribed to a certain topic.
@@ -17,7 +20,7 @@ public interface PubSub {
      * @param topic
      * @return list of devices subscribed to a certain topic
      */
-    List getTopics(String topic);
+    List getTopics(String topic) throws ExecutionException, InterruptedException, JsonProcessingException;
 
     /**
      * Subscribe a device to one or more topics.
