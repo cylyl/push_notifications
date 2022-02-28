@@ -1,5 +1,9 @@
 package com.github.push.push;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+import java.util.concurrent.ExecutionException;
+
 public interface Device {
 
     /**
@@ -15,5 +19,5 @@ public interface Device {
      * @param uuid  Device UUID
      * @param token Push token
      */
-    void updateToken(String uuid, String token);
+    void updateToken(String uuid, String token) throws ExecutionException, InterruptedException, JsonProcessingException;
 }

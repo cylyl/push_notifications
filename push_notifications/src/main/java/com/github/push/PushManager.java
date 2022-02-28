@@ -10,7 +10,6 @@ import com.github.push.push.PubSub;
 import com.github.push.push.Push;
 import com.github.push.store.StoreManager;
 import com.github.push.utils.Mapper;
-import com.google.firebase.messaging.FirebaseMessagingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,11 +35,7 @@ public class PushManager implements Push, PubSub, Device {
     public com.github.push.model.Device getDevice(String uuid) {
         try {
             return storeManager.getDevice(uuid);
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (JsonProcessingException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
@@ -49,28 +44,16 @@ public class PushManager implements Push, PubSub, Device {
     public List<com.github.push.model.Device> getDeviceByUid(String uid) {
         try {
             return storeManager.getDeviceByUid(uid);
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (JsonProcessingException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    public void updateToken(String uuid, String token) {
-        try {
-            com.github.push.model.Device device = storeManager.getDevice(uuid);
-            device.setToken(token);
-            storeManager.setDevice(device);
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
+    public void updateToken(String uuid, String token) throws ExecutionException, InterruptedException, JsonProcessingException {
+        com.github.push.model.Device device = storeManager.getDevice(uuid);
+        device.setToken(token);
+        storeManager.setDevice(device);
     }
 
     public int subscribeTopic(List<String> uuids, String topic) {
@@ -89,7 +72,7 @@ public class PushManager implements Push, PubSub, Device {
         List<com.github.push.model.Device> deviceList = getDeviceByUid(uid);
         List<String> uuids = new ArrayList<>();
         for (com.github.push.model.Device device : deviceList) {
-            Optional<Topic> optionalTopic = null;
+            Optional<Topic> optionalTopic;
             try {
                 optionalTopic = getTopic(topic);
                 if (optionalTopic.isPresent()) {
@@ -97,16 +80,11 @@ public class PushManager implements Push, PubSub, Device {
                     if (list == null) {
                         list = new java.util.ArrayList<>();
                     }
-                    if (list.contains(device.getUuid())) {
-                    } else {
+                    if (!list.contains(device.getUuid())) {
                         uuids.add(device.getUuid());
                     }
                 }
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (JsonProcessingException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -120,7 +98,7 @@ public class PushManager implements Push, PubSub, Device {
         List<com.github.push.model.Device> deviceList = getDeviceByUid(uid);
         int count = 0;
         for (com.github.push.model.Device device : deviceList) {
-            Optional<Topic> optionalTopic = null;
+            Optional<Topic> optionalTopic;
             try {
                 optionalTopic = getTopic(topic);
                 if (optionalTopic.isPresent()) {
@@ -130,15 +108,10 @@ public class PushManager implements Push, PubSub, Device {
                     }
                     if (list.contains(device.getUuid())) {
                         count += unsubscribeTopics(Collections.singletonList(topic), device.getUuid());
-                    } else {
                     }
 
                 }
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (JsonProcessingException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -156,7 +129,7 @@ public class PushManager implements Push, PubSub, Device {
         if (opt.isPresent()) {
             return opt.get().getSubscribers();
         }
-        return new ArrayList();
+        return new ArrayList<>(0);
     }
 
     public Optional<Topic> getTopic(String topic) throws ExecutionException, InterruptedException, JsonProcessingException {
@@ -168,11 +141,7 @@ public class PushManager implements Push, PubSub, Device {
         try {
             storeManager.subscribeTopics(uuids, topic);
             return uuids.size();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (JsonProcessingException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return 0;
@@ -204,11 +173,7 @@ public class PushManager implements Push, PubSub, Device {
         try {
             storeManager.unsubscribeTopics(topics, uuid);
             return 1;
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (JsonProcessingException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return 0;
@@ -217,7 +182,7 @@ public class PushManager implements Push, PubSub, Device {
 
     public String push(com.github.push.model.Device device,
                        com.github.push.model.messaging.Message message) {
-        if (device.getToken().equals(message.getToken()) == false) {
+        if (!device.getToken().equals(message.getToken())) {
             message = new Message(
                     message.getName(),
                     message.getData(),
@@ -235,16 +200,8 @@ public class PushManager implements Push, PubSub, Device {
         try {
             res = fcmManager.push(Mapper.mapMessage(message));
             Notification notification = Mapper.getNotification(message);
-            if (notification != null) {
-                storeManager.setNotification(device, notification);
-            }
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        } catch (FirebaseMessagingException e) {
+            storeManager.setNotification(device, notification);
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return res;
@@ -271,9 +228,9 @@ public class PushManager implements Push, PubSub, Device {
         return push(uuid, message);
     }
 
-    public void pushSimpleMessageToTopic(String topic, String title, String body) throws FirebaseMessagingException, ExecutionException, InterruptedException, JsonProcessingException {
+    public void pushSimpleMessageToTopic(String topic, String title, String body) throws ExecutionException, InterruptedException, JsonProcessingException {
         Optional<Topic> opt = getTopic(topic);
-        if (opt.isPresent() == false) {
+        if (!opt.isPresent()) {
             return;
         }
         Topic topic1 = opt.get();
@@ -283,28 +240,19 @@ public class PushManager implements Push, PubSub, Device {
                 new com.github.push.model.messaging.Notification(title, body, null),
                 /*AndroidConfig*/ null,
                 /*String token*/ null,
-                /*String topic*/ topic,
+                /*String topic*/ null,
                 null,
                 null,
                 null
         );
-        String res = fcmManager.push(Mapper.mapMessage(message));
-        logger.debug(res);
-        try {
-            Notification notification = Mapper.getNotification(message);
-                for (String uuid : topic1.getSubscribers()
-                ) {
-                    com.github.push.model.Device device = getDevice(uuid);
-                    try {
-                        storeManager.setNotification(device, notification);
-                    } catch (ExecutionException e) {
-                        e.printStackTrace();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
+
+        Notification notification = Mapper.getNotification(message);
+        for (String uuid : topic1.getSubscribers()
+        ) {
+            com.github.push.model.Device device = getDevice(uuid);
+            String res = push(device, message);
+            logger.debug(res);
+            storeManager.setNotification(device, notification);
         }
     }
 
@@ -313,11 +261,7 @@ public class PushManager implements Push, PubSub, Device {
         storeManager.getTopics().forEach(topic -> {
             try {
                 storeManager.DeleteTopicsSubscribers(topic);
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (JsonProcessingException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         });
