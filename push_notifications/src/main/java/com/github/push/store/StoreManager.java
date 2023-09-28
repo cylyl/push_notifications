@@ -2,7 +2,7 @@ package com.github.push.store;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.push.StringUtils;
+import com.github.cylyl.StringUtils;
 import com.github.push.dao.DeviceDao;
 import com.github.push.dao.NotificationDao;
 import com.github.push.dao.TabDao;

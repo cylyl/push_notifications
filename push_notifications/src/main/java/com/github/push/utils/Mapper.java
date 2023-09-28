@@ -2,7 +2,7 @@ package com.github.push.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.push.StringUtils;
+import com.github.cylyl.StringUtils;
 import com.github.push.model.messaging.ApnsAlert;
 import com.github.push.model.messaging.ApnsPayload;
 import com.google.firebase.messaging.*;
