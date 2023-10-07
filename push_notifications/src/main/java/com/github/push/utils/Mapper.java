@@ -19,7 +19,8 @@ public class Mapper {
         builder.setToken(message.getToken());
         builder.setFcmOptions(Mapper.mapFcmOptions(message.getFcmOptions()));
         builder.setWebpushConfig(Mapper.mapWebpush(message.getWebpushConfig()));
-        builder.setTopic(message.getTopic());
+        // let push manager managed topic
+        //builder.setTopic(message.getTopic());
         if (message.getData() != null) builder.putAllData(message.getData());
         return builder.build();
     }
@@ -115,10 +116,9 @@ public class Mapper {
         notification.setBody(message.getNotification().getBody());
         notification.setTitle(message.getNotification().getTitle());
         notification.setUnread(true);
-        notification.setType(message.getTopic());
+        notification.setType(message.getTopic() == null ? resolveNotificationType(notification) : message.getTopic());
         notification.setData(objectMapper.writeValueAsString(message.getData()));
         notification.setCreated_at(System.currentTimeMillis());
-        notification.setType(resolveNotificationType(notification));
         return notification;
     }
 

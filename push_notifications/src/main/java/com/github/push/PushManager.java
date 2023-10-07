@@ -240,19 +240,17 @@ public class PushManager implements Push, PubSub, Device {
                 new com.github.push.model.messaging.Notification(title, body, null),
                 /*AndroidConfig*/ null,
                 /*String token*/ null,
-                /*String topic*/ null,
+                /*String topic*/ topic,
                 null,
                 null,
                 null
         );
 
-        Notification notification = Mapper.getNotification(message);
         for (String uuid : topic1.getSubscribers()
         ) {
             com.github.push.model.Device device = getDevice(uuid);
             String res = push(device, message);
             logger.debug(res);
-            storeManager.setNotification(device, notification);
         }
     }
 
