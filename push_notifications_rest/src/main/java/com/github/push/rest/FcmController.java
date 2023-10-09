@@ -20,7 +20,21 @@ public class FcmController {
     Logger logger = LoggerFactory.getLogger(FcmController.class);
 
 
-    @PostMapping("/push")
+    @PostMapping("/pushmsg")
+    public ResponseEntity pushmsg(
+            HttpServletRequest request,
+            @RequestParam(name = "token") String token,
+            @RequestParam(name = "title") String title,
+            @RequestParam(name = "text") String text
+    ) throws FirebaseMessagingException, ExecutionException, InterruptedException, JsonProcessingException {
+
+        if(token != null && pushManager != null)
+            pushManager.pushSimpleMessageToTopic(
+                    "Messages", title, text
+            );
+        return new ResponseEntity<>("", HttpStatus.OK);
+    }
+
     public ResponseEntity push(
             HttpServletRequest request,
             @RequestParam(name = "uuid") String uuid,
@@ -57,6 +71,7 @@ public class FcmController {
     ) {
         return new ResponseEntity<>(pushManager.unsubscribeTopics(uuid, topic), HttpStatus.OK);
     }
+
 
     @Autowired
     PushManager pushManager;

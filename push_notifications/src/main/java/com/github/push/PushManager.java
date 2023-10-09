@@ -246,6 +246,9 @@ public class PushManager implements Push, PubSub, Device {
                 null
         );
 
+        if(topic1.getSubscribers() == null) {
+            return;
+        }
         for (String uuid : topic1.getSubscribers()
         ) {
             com.github.push.model.Device device = getDevice(uuid);
