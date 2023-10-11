@@ -1,0 +1,4 @@
+FROM adoptopenjdk/openjdk12:x86_64-alpine-jdk-12.0.2_10-slim
+COPY target/*.jar /app/app.jar
+ENV SPRING_PROFILES_ACTIVE=default
+ENTRYPOINT ["java", "-Xms1g", "-Xmx1g", "-Djava.net.preferIPv4Stack=true","-Dlog4j2.formatMsgNoLookups=true","-jar","/app/app.jar"]

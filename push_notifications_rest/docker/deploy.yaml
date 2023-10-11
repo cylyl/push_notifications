@@ -1,0 +1,41 @@
+# Define a 'Service' To Expose MySQL to Other Services
+apiVersion: v1
+kind: Service
+metadata:
+  name: push-notifications
+  labels:
+    app: notifications
+spec:
+  ports:
+    - name: "8081"
+      port: 8081
+      targetPort: 8081
+  selector:
+    app: notifications
+#  clusterIP: None # DNS is used, so clusterIP is not needed
+  loadBalancerIP: 192.168.100.9
+  type: LoadBalancer
+---
+# Deployment specification begins here
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: push-notifications
+  labels:
+    app: notifications
+spec:
+  selector: #  Pod Should contain same labels
+    matchLabels:
+      app: notifications
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels: # Must match 'Service' and 'Deployment' selectors
+        app: notifications
+    spec:
+      containers:
+        - image: gcr.io/optimum-nebula-230307/push-notifications:latest
+          name: push-notifications
+          ports:
+            - containerPort: 8081
