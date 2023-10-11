@@ -12,9 +12,11 @@ import com.github.push.model.Notification;
 import com.github.push.model.Tab;
 import com.github.push.model.Topic;
 import com.google.cloud.firestore.Firestore;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.cloud.FirestoreClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +27,7 @@ import java.util.concurrent.ExecutionException;
 public class StoreManager {
     Logger logger = LoggerFactory.getLogger(StoreManager.class);
     final private ObjectMapper objectMapper = new ObjectMapper();
+
     final private Firestore db;
     final private DeviceDao deviceDao;
     final private TopicDao topicDao;

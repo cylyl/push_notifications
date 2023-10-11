@@ -8,7 +8,6 @@ import java.util.List;
 //https://github.com/firebase/firebase-admin-java/blob/70c9668184fa57982da92c0efaf7d901bcd36983/src/test/java/com/google/firebase/snippets/FirebaseMessagingSnippets.java#L46-L60
 public class FcmManager {
 
-
     private BatchResponse sendAll(List<Message> messages) throws FirebaseMessagingException {
         return FirebaseMessaging.getInstance().sendAll(messages);
     }

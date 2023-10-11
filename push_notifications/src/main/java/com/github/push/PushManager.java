@@ -10,8 +10,10 @@ import com.github.push.push.PubSub;
 import com.github.push.push.Push;
 import com.github.push.store.StoreManager;
 import com.github.push.utils.Mapper;
+import com.google.firebase.auth.FirebaseAuth;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,7 +23,8 @@ import java.util.concurrent.ExecutionException;
 
 
 public class PushManager implements Push, PubSub, Device {
-
+    @Autowired
+    FirebaseAuth firebaseAuth;
     Logger logger = LoggerFactory.getLogger(PushManager.class);
 
     final private StoreManager storeManager = new StoreManager(
